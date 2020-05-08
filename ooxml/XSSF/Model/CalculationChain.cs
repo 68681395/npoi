@@ -42,11 +42,18 @@ namespace NPOI.XSSF.Model
             chain = new CT_CalcChain();
         }
 
-        internal CalculationChain(PackagePart part, PackageRelationship rel)
-            : base(part, rel)
+        internal CalculationChain(PackagePart part)
+            : base(part)
         {
             XmlDocument xml = ConvertStreamToXml(part.GetInputStream());
             ReadFrom(xml);
+        }
+
+        [Obsolete("deprecated in POI 3.14, scheduled for removal in POI 3.16")]
+        public CalculationChain(PackagePart part, PackageRelationship rel)
+             : this(part)
+        {
+
         }
 
         public void ReadFrom(XmlDocument xml)
@@ -105,6 +112,7 @@ namespace NPOI.XSSF.Model
                     if (c[i].iSpecified && i < c.Count - 1 && !c[i + 1].iSpecified)
                     {
                         c[i + 1].i = id;
+                        c[i + 1].iSpecified = true;
                     }
                     chain.RemoveC(i);
                     break;

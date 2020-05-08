@@ -73,8 +73,8 @@ namespace NPOI.XSSF.UserModel
          * @param rel  the namespace relationship holding this chart,
          * the relationship type must be http://schemas.Openxmlformats.org/officeDocument/2006/relationships/chart
          */
-        protected XSSFChart(PackagePart part, PackageRelationship rel)
-            : base(part, rel)
+        protected XSSFChart(PackagePart part)
+            : base(part)
         {
 
             XmlDocument doc = ConvertStreamToXml(part.GetInputStream());
@@ -82,6 +82,12 @@ namespace NPOI.XSSF.UserModel
             chart = chartSpaceDocument.GetChartSpace().chart;
         }
 
+        [Obsolete("deprecated in POI 3.14, scheduled for removal in POI 3.16")]
+        protected XSSFChart(PackagePart part, PackageRelationship rel)
+            : this(part)
+        {
+
+        }
         /**
          * Construct a new CTChartSpace bean.
          * By default, it's just an empty placeholder for chart objects.
@@ -211,6 +217,21 @@ namespace NPOI.XSSF.UserModel
             axis.Add(categoryAxis);
             return categoryAxis;
         }
+
+        public IChartAxis CreateDateAxis(AxisPosition pos)
+        {
+            long id = axis.Count + 1;
+            XSSFDateAxis dateAxis = new XSSFDateAxis(this, id, pos);
+            if (axis.Count == 1)
+            {
+                IChartAxis ax = axis[0];
+                ax.CrossAxis(dateAxis);
+                dateAxis.CrossAxis(ax);
+            }
+            axis.Add(dateAxis);
+            return dateAxis;
+        }
+
         public List<IChartAxis> GetAxis()
         {
             if (axis.Count == 0 && HasAxis())
@@ -265,6 +286,74 @@ namespace NPOI.XSSF.UserModel
             }
         }
 
+        /**
+	     * Sets the title text.
+	     */
+        public void SetTitle(String newTitle)
+        {
+            CT_Title ctTitle;
+            if (chart.IsSetTitle())
+            {
+                ctTitle = chart.title;
+            }
+            else
+            {
+                ctTitle = chart.AddNewTitle();
+            }
+
+            CT_Tx tx;
+            if (ctTitle.IsSetTx())
+            {
+                tx = ctTitle.tx;
+            }
+            else
+            {
+                tx = ctTitle.AddNewTx();
+            }
+
+            if (tx.IsSetStrRef())
+            {
+                tx.UnsetStrRef();
+            }
+
+            OpenXmlFormats.Dml.Chart.CT_TextBody rich;
+            if (tx.IsSetRich())
+            {
+                rich = tx.rich;
+            }
+            else
+            {
+                rich = tx.AddNewRich();
+                rich.AddNewBodyPr();  // body properties must exist (but can be empty)
+            }
+
+            CT_TextParagraph para;
+            if (rich.SizeOfPArray() > 0)
+            {
+                para = rich.GetPArray(0);
+            }
+            else
+            {
+                para = rich.AddNewP();
+            }
+
+            if (para.SizeOfRArray() > 0)
+            {
+                CT_RegularTextRun run = para.GetRArray(0);
+                run.t = (newTitle);
+            }
+            else if (para.SizeOfFldArray() > 0)
+            {
+                OpenXmlFormats.Dml.CT_TextField fld = para.GetFldArray(0);
+                fld.t = (newTitle);
+            }
+            else
+            {
+                CT_RegularTextRun run = para.AddNewR();
+                run.t = (newTitle);
+            }
+        }
+
         public IChartLegend GetOrCreateLegend()
         {
             return new XSSFChartLegend(this);
@@ -276,6 +365,11 @@ namespace NPOI.XSSF.UserModel
             {
                 chart.unsetLegend();
             }
+        }
+
+        public void SetCTDispBlanksAs(CT_DispBlanksAs disp)
+        {
+            chart.dispBlanksAs = disp;
         }
 
         private bool HasAxis()
@@ -312,7 +406,6 @@ namespace NPOI.XSSF.UserModel
                 axis.Add(new XSSFValueAxis(this, valAx));
             }
         }
-
     }
 }
 

@@ -22,7 +22,7 @@ using System.IO;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
-namespace TestCases.OPC
+namespace TestCases.OpenXml4Net.OPC
 {
     [TestFixture]
     public class TestListParts
@@ -33,7 +33,7 @@ namespace TestCases.OPC
 
         private Dictionary<PackagePartName, String> values;
 
-        [TestFixtureSetUp]
+        [SetUp]
         public void SetUp()
         {
             values = new Dictionary<PackagePartName, String>();
